@@ -30,11 +30,25 @@ public class ConnectionCreator implements Runnable {
 		}
 	}
 
+	/**
+	 * All requests to be created.
+	 */
 	private BlockingQueue<ConnectionRequest> sockets = new LinkedBlockingQueue<ConnectionRequest>();
 
+	/**
+	 * The timeout
+	 */
 	private int timeout;
 
+	/**
+	 * The logger that logs the data.
+	 */
 	private Logger logger;
+
+	/**
+	 * True if "--connections=0"
+	 */
+	private boolean noProducers = false;
 
 	private static int THREAD_ID = 0;
 	private static final Object lock = new Object();
@@ -44,6 +58,9 @@ public class ConnectionCreator implements Runnable {
 		this.logger  = mp.logger;
 	}
 
+	/**
+	 * Waits for requests and handles these.
+	 */
 	public void run() {
 
 		while (!Thread.currentThread().isInterrupted()) {
@@ -69,6 +86,10 @@ public class ConnectionCreator implements Runnable {
 
 	}
 
+	/**
+	 * Established the connection and uses a Socket for it.
+	 * @param request
+	 */
 	private void connectAsSocket(ConnectionRequest request) {
 		request.socket = new Socket();
 
@@ -80,6 +101,10 @@ public class ConnectionCreator implements Runnable {
 		}
 	}
 
+	/**
+	 * Establishes the connection and uses a SocketChannel for it.
+	 * @param request
+	 */
 	private void connectAsChannel(ConnectionRequest request) {
 
 		try {
@@ -91,25 +116,51 @@ public class ConnectionCreator implements Runnable {
 
 	}
 
+	/**
+	 * Connects to a SocketAddress and returns a Socket.
+	 * @param socket
+	 * @return
+	 */
 	public Socket connect(InetSocketAddress socket) {
 		ConnectionRequest request = new ConnectionRequest(socket);
-		sockets.add(request);
 
-		try {
-			synchronized (request) {
-				request.wait();
-			}
-		} catch (InterruptedException e) {
-
-			return null;
+		if (noProducers) {
+			connectAsSocket(request);
+			return (Socket) request.socket;
 		}
+
+		if (!waitForRequest(request))
+			return null;
 
 		return (Socket) request.socket;
 	}
 
+	/**
+	 * Connects to the given SocketAddress and returns a SocketChannel.
+	 * @param socket
+	 * @return
+	 */
 	public SocketChannel connectChannel(InetSocketAddress socket) {
 		ConnectionRequest request = new ConnectionRequest(socket);
 		request.isChannel = true;
+
+		if (noProducers) {
+			connectAsChannel(request);
+			return (SocketChannel) request.socket;
+		}
+
+		if (!waitForRequest(request))
+			return null;
+
+		return (SocketChannel) request.socket;
+	}
+
+	/**
+	 * Waits for the request to be processed.
+	 * @param request
+	 * @return
+	 */
+	private boolean waitForRequest(ConnectionRequest request) {
 		sockets.add(request);
 
 		try {
@@ -117,14 +168,32 @@ public class ConnectionCreator implements Runnable {
 				request.wait();
 			}
 		} catch (InterruptedException e) {
-
-			return null;
+			return false;
 		}
 
-		return (SocketChannel) request.socket;
+		return true;
 	}
 
-	public Thread startNewThread() {
+	/**
+	 * Creats the given amount of threads.
+	 * @param count
+	 */
+	public void createThreads(int count) {
+		if (count <= 0) {
+			// Connect inside the threads.
+			this.noProducers = true;
+		} else {
+			// Create the producer-threads.
+			for (int i = 0; i<count; i++)
+				startNewThread();
+		}
+	}
+
+	/**
+	 * Starts a new thread.
+	 * @return
+	 */
+	private Thread startNewThread() {
 		Thread thread = new Thread(this);
 		synchronized (lock) { thread.setName("ConnectThread::"+(THREAD_ID++)); };
 		thread.setDaemon(true);

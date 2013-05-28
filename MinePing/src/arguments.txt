@@ -12,12 +12,12 @@ Default-Parameters:
 
 -p=<Pinger>  --pinger=<Pinger>        Select a pinger.
 -w=<Writer>  --writer=<Writer>        Select a writer. Default: CSV
--o=<Output>  --output=<Output>        Specifies the outputfile.         *1
--l=<Log>     --log=<Log>              Specifies the logfile.            *1
+-o=<Output>  --output=<Output>        Specifies the outputfile.            *1
+-l=<Log>     --log=<Log>              Specifies the logfile.               *1
 -e=<Range>   --resolver=<Resolver>    Select a resolver.
 -t=<Port>    --port=<Port>            Specified the port.
 -e=<Count>   --threads=<Count>        The count of threads pinging.
--c=<Count>   --connections=<Count>    Amount of sockets to be established.
+-c=<Count>   --connections=<Count>    Amount of sockets to be established. *2
              --extensions=<Dir>       The Extension-Directory.
              --flush-results=<Count>  The count of results cached.
              --log-level=<Level>      Should the output be verbose
@@ -27,6 +27,10 @@ Default-Parameters:
    *stdout     Writes the output into the standard output.
    *stderr     Writes the output into the standard error stream.
    *blackhole  Discards anything written into it.
+
+*2 Possible Connection Parameters:
+   0           Dynamically create a new socket within the thread.   (Default)
+   >0          Create the given amount of producer threads.
 
 Preinstalled Resolvers:
 =======================

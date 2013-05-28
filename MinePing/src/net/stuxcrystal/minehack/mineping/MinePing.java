@@ -171,9 +171,7 @@ public class MinePing {
 
 		this.writeThread.start();
 
-		for (int i = 0; i<connections; i++) {
-			this.connector.startNewThread();
-		}
+		this.connector.createThreads(this.connections);
 
 		for (int i = 0; i<threads; i++) {
 			this.pingThreads[i] = new PingThread(this);
@@ -185,7 +183,7 @@ public class MinePing {
 				try {
 					this.pingThreads[i].join();
 				} catch (InterruptedException e) {
-					e.printStackTrace();
+					break;
 				}
 		}
 

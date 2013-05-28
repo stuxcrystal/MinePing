@@ -1,0 +1,60 @@
+MinePing.jar
+  [-w=<Writer>] [-o=<Output>] [-l=<Log>] [-e=<Threads>] [-c=<Count>]
+  [--flush-results=<Count>] [--log-level=<Level>] [--timeout=<Timeout>]
+  [--extensions=<Dir>] [--extension=<Class> [...]] -p=<Pinger> -r=<Range>
+  -t=<Port> | [-h]
+
+Executes a rangeping.
+
+Default-Parameters:
+===================
+-h           --help                   Shows this help.
+
+-p=<Pinger>  --pinger=<Pinger>        Select a pinger.
+-w=<Writer>  --writer=<Writer>        Select a writer. Default: CSV
+-o=<Output>  --output=<Output>        Specifies the outputfile.         *1
+-l=<Log>     --log=<Log>              Specifies the logfile.            *1
+-e=<Range>   --resolver=<Resolver>    Select a resolver.
+-t=<Port>    --port=<Port>            Specified the port.
+-e=<Count>   --threads=<Count>        The count of threads pinging.
+-c=<Count>   --connections=<Count>    Amount of sockets to be established.
+             --extensions=<Dir>       The Extension-Directory.
+             --flush-results=<Count>  The count of results cached.
+             --log-level=<Level>      Should the output be verbose
+             --timeout=<Timeout>      Timeout in seconds.
+
+*1 Special Parameters:
+   *stdout     Writes the output into the standard output.
+   *stderr     Writes the output into the standard error stream.
+   *blackhole  Discards anything written into it.
+
+Preinstalled Resolvers:
+=======================
+A resolver is a piece of code that provides the ipranges to the software.
+There are some preinstalled resolvers in the software.
+
+Default
+-------
+  The default resolver adds a parameter "--range" that can be specified
+  multiple times. Each parameter registers a range in a special format
+  that allows to specify all ranges.
+
+Subnet
+------
+  The subnetfile resolver adds a resolver that takes a file where all
+  lines represents a subnet.
+
+
+Preinstalled Pingers:
+=====================
+There are no predefined pingers.
+
+Preinstalled Writers:
+=====================
+There are some writers preinstalled.
+
+CSV
+---
+  This writer stores the values into a csv-file.
+  --separator -s                  The separator char.
+  --no-header -a                  Don't print a header.

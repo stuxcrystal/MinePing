@@ -1,4 +1,6 @@
-```MinePing.jar [Options] -p=<Pinger> -r=<Resolver>```
+Description
+===========
+```MinePing.jar [Options] -p=<Pinger> -r=<Resolver> | [ --help | -h ]```
 
 Executes a rangeping.
 

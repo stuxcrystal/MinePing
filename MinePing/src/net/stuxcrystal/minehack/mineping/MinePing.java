@@ -7,13 +7,19 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.logging.Logger;
 
+import net.stuxcrystal.minehack.mineping.addons.ExtensionManager;
 import net.stuxcrystal.minehack.mineping.api.AddressIterator;
 import net.stuxcrystal.minehack.mineping.api.Connector;
+import net.stuxcrystal.minehack.mineping.api.Extension;
 import net.stuxcrystal.minehack.mineping.api.Pinger;
 import net.stuxcrystal.minehack.mineping.api.Resolver;
 import net.stuxcrystal.minehack.mineping.api.Strategy;
 import net.stuxcrystal.minehack.mineping.api.Writer;
-import net.stuxcrystal.minehack.mineping.core.WriteThread;
+import net.stuxcrystal.minehack.mineping.events.ConnectorWrapper;
+import net.stuxcrystal.minehack.mineping.events.EventManager;
+import net.stuxcrystal.minehack.mineping.events.IteratorWrapper;
+import net.stuxcrystal.minehack.mineping.events.PingerWrapper;
+import net.stuxcrystal.minehack.mineping.events.WriterWrapper;
 import net.stuxcrystal.minehack.mineping.resolvers.defaultresolver.RangeResolver;
 
 /**
@@ -52,6 +58,11 @@ public class MinePing {
 	 */
 	public Connector connector;
 
+	/**
+	 * All ranges to be pinged.
+	 */
+	private AddressIterator iterator;
+
 	//////////////////////////////////////////////////////////////////////////
 	// Output                                                               //
 	//////////////////////////////////////////////////////////////////////////
@@ -84,10 +95,14 @@ public class MinePing {
 	public int[] ports;
 
 	/**
-	 * All ranges to be pinged.
+	 * A EventManager to manage all EventHandler.
 	 */
-	private AddressIterator iterator;
+	private EventManager events = new EventManager();
 
+	/**
+	 * The extension-manager that handles extensions.
+	 */
+	private ExtensionManager manager;
 
 	/**
 	 * The thread that is started when the file has to be flushed.
@@ -105,16 +120,20 @@ public class MinePing {
 	 */
 	MinePing
 	(
+	  ExtensionManager manager,
 	  Pinger pinger, Writer writer, Resolver resolver,
 	  Strategy strategy, Connector connector,
 	  OutputStream output, Logger logger, String ports,
 	  int flushAfter
 	) {
-		this.pinger      = pinger;
-		this.writer      = writer;
-		this.resolver    = resolver;
+		this.manager     = manager;
+
+		this.pinger      = new PingerWrapper(events, pinger);
+		this.writer      = new WriterWrapper(events, writer);
+		this.connector   = new ConnectorWrapper(events, connector);
 		this.strategy    = strategy;
-		this.connector   = connector;
+		this.resolver    = resolver;
+
 		this.output      = output;
 		this.logger      = logger;
 		this.ports       = RangeResolver.parsePortRange(ports);
@@ -145,11 +164,19 @@ public class MinePing {
 	}
 
 	/**
+	 * Returns the EventManager of the software.
+	 * @return
+	 */
+	public EventManager getEventManager() {
+		return this.events;
+	}
+
+	/**
 	 * Starts pinging.
 	 */
 	public void startPing() {
 		this.logger.info("MinePing 3 Resurrection");
-		this.logger.info("Build: 12");
+		this.logger.info("Build: 13");
 
 		// Information output
 		this.logger.finest("Current writer:    " + writer.getName());
@@ -157,6 +184,10 @@ public class MinePing {
 		this.logger.finest("Current resolver:  " + resolver.getName());
 		this.logger.finest("Current strategy:  " + strategy.getName());
 		this.logger.finest("Current connector: " + connector.getName());
+
+		// Register events.
+		for (Extension extension : this.manager.getExtensions())
+			extension.registerEvents(events);
 
 		// Preparation state.
 		try {
@@ -166,16 +197,32 @@ public class MinePing {
 			return;
 		}
 		this.pinger.prepare();
-		iterator = this.resolver.getRangeIterator(ports);
+		iterator = new IteratorWrapper(events, this.resolver.getRangeIterator(ports));
 
 		// Execution state.
 		this.writeThread.start();
 		this.connector.start();
-		this.strategy.execute();
+		this.strategy.start();
+		this.events.start();
+
+		// Wait for execution
+		while (!this.strategy.isRunning()) {
+
+			this.events.tick();
+
+			try {
+				Thread.sleep(100);
+			} catch (InterruptedException e) {
+				break;
+			}
+		}
+
+		this.strategy.interrupt();
 
 		// Clingout state.
 		this.connector.stop();
 		this.pinger.end();
+		this.events.stop();
 
 		// Stop writer.
 		this.writeThread.interrupt();

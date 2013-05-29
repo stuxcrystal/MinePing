@@ -9,6 +9,7 @@ import net.stuxcrystal.minehack.mineping.api.Pinger;
 import net.stuxcrystal.minehack.mineping.api.Resolver;
 import net.stuxcrystal.minehack.mineping.api.Strategy;
 import net.stuxcrystal.minehack.mineping.api.Writer;
+import net.stuxcrystal.minehack.mineping.events.EventManager;
 
 public class EntryPoint implements Extension {
 
@@ -36,6 +37,12 @@ public class EntryPoint implements Extension {
 	public List<Connector> getConnectors() {
 		// TODO Auto-generated method stub
 		return null;
+	}
+
+	@Override
+	public void registerEvents(EventManager manager) {
+		// TODO Auto-generated method stub
+
 	}
 
 }

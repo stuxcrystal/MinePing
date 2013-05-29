@@ -17,9 +17,21 @@ public interface Strategy {
 	public String getName();
 
 	/**
-	 * Execute the software.
+	 * Start pinging.
 	 */
-	public void execute();
+	public void start();
+
+	/**
+	 * Checks if the ping-strategy is running.
+	 * @return true if the software is pinging.
+	 */
+	public boolean isRunning();
+
+	/**
+	 * Interrupt the strategy.<p />
+	 * All threads have to be stopped when the method returns.
+	 */
+	public void interrupt();
 
 	/**
 	 * Registers the arguments for this strategy.

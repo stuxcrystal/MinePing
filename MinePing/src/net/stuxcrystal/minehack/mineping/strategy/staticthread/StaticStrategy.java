@@ -9,30 +9,12 @@ import net.stuxcrystal.minehack.mineping.api.Strategy;
 
 public class StaticStrategy implements Strategy {
 
-	private int threads;
+	private int cThreads;
+
+	private Thread[] threads;
 
 	public String getName() {
 		return "static";
-	}
-
-	public void execute() {
-
-		PingThread[] pingThreads = new PingThread[threads];
-
-		for (int i = 0; i<threads; i++) {
-			pingThreads[i] = new PingThread(MinePingInstances.getMinePing());
-			pingThreads[i].start();
-		}
-
-		for (int i = 0; i<threads; i++) {
-			if (pingThreads[i].isAlive()) {
-				try {
-					pingThreads[i].join();
-				} catch (InterruptedException e) {
-					break;
-				}
-			}
-		}
 	}
 
 	public void registerCommandLineArguments(OptionParser parser) {
@@ -40,7 +22,40 @@ public class StaticStrategy implements Strategy {
 	}
 
 	public void parseCommandLine(ParserResult result) {
-		threads = result.getValue("threads");
+		cThreads = result.getValue("threads");
 
+	}
+
+	public void start() {
+		threads = new PingThread[cThreads];
+
+		for (int i = 0; i<cThreads; i++) {
+			threads[i] = new PingThread(MinePingInstances.getMinePing());
+			threads[i].start();
+		}
+	}
+
+	public boolean isRunning() {
+
+		for (Thread thread : threads)
+			if (thread.isAlive())
+				return true;
+
+		return false;
+	}
+
+	public void interrupt() {
+		for (int i = 0; i<cThreads; i++)
+			threads[i].interrupt();
+
+		for (int i = 0; i<cThreads; i++) {
+			if (threads[i].isAlive()) {
+				try {
+					threads[i].join();
+				} catch (InterruptedException e) {
+					break;
+				}
+			}
+		}
 	}
 }

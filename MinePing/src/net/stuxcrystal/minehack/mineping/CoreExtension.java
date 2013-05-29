@@ -10,6 +10,7 @@ import net.stuxcrystal.minehack.mineping.api.Resolver;
 import net.stuxcrystal.minehack.mineping.api.Strategy;
 import net.stuxcrystal.minehack.mineping.api.Writer;
 import net.stuxcrystal.minehack.mineping.connector.staticthread.DefaultConnector;
+import net.stuxcrystal.minehack.mineping.events.EventManager;
 import net.stuxcrystal.minehack.mineping.resolvers.defaultresolver.DefaultResolver;
 import net.stuxcrystal.minehack.mineping.resolvers.subnet.SubnetFile;
 import net.stuxcrystal.minehack.mineping.resolvers.subnet.SubnetRanges;
@@ -51,5 +52,6 @@ public class CoreExtension implements Extension {
 			(Connector) new DefaultConnector()
 		);
 	}
+	public void registerEvents(EventManager manager) {}
 
 }

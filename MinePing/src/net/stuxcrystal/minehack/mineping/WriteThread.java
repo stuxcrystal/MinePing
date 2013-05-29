@@ -1,4 +1,4 @@
-package net.stuxcrystal.minehack.mineping.core;
+package net.stuxcrystal.minehack.mineping;
 
 import java.io.IOException;
 import java.util.Map;

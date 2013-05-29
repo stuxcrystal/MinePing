@@ -137,6 +137,7 @@ public class Starter
 
 		// Loading Ping-Pinger.
 		MinePing system = new MinePing(
+				mgr,
 				pinger,
 				writer,
 				resolver,

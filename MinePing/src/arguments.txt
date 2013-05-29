@@ -1,36 +1,36 @@
 MinePing.jar
-  [-w=<Writer>] [-o=<Output>] [-l=<Log>] [-e=<Threads>] [-c=<Count>]
-  [--flush-results=<Count>] [--log-level=<Level>] [--timeout=<Timeout>]
-  [--extensions=<Dir>] [--extension=<Class> [...]] -p=<Pinger> -r=<Range>
-  -t=<Port> | [-h]
+    <REWRITE>
 
 Executes a rangeping.
 
 Default-Parameters:
 ===================
--h           --help                   Shows this help.
+-h            --help                   Shows this help.
 
--p=<Pinger>  --pinger=<Pinger>        Select a pinger.
--w=<Writer>  --writer=<Writer>        Select a writer. Default: CSV
--o=<Output>  --output=<Output>        Specifies the outputfile.            *1
--l=<Log>     --log=<Log>              Specifies the logfile.               *1
--e=<Range>   --resolver=<Resolver>    Select a resolver.
--t=<Port>    --port=<Port>            Specified the port.
--e=<Count>   --threads=<Count>        The count of threads pinging.
--c=<Count>   --connections=<Count>    Amount of sockets to be established. *2
-             --extensions=<Dir>       The Extension-Directory.
-             --flush-results=<Count>  The count of results cached.
-             --log-level=<Level>      Should the output be verbose
-             --timeout=<Timeout>      Timeout in seconds.
+-p=<Pinger>   --pinger=<Pinger>        Select a pinger.
+-w=<Writer>   --writer=<Writer>        Select a writer. Default: CSV
+-r=<Resolver> --resolver=<Resolver>    Select a resolver.
+-s=<Strategy> --strategy=<Strategy>    Select a strategy. Default: static
+
+-o=<Output>   --output=<Output>        Specifies the outputfile.            *1
+-l=<Log>      --log=<Log>              Specifies the logfile.               *1
+
+-t=<Port>     --port=<Port>            Specified the port.
+-c=<Count>    --connections=<Count>    Amount of sockets to be established. *2
+
+              --extensions=<Dir>       The Extension-Directory.
+              --flush-results=<Count>  The count of results cached.
+              --log-level=<Level>      Should the output be verbose
+              --timeout=<Timeout>      Timeout in seconds.
 
 *1 Special Parameters:
-   *stdout     Writes the output into the standard output.
-   *stderr     Writes the output into the standard error stream.
-   *blackhole  Discards anything written into it.
+   *stdout      Writes the output into the standard output.
+   *stderr      Writes the output into the standard error stream.
+   *blackhole   Discards anything written into it.
 
 *2 Possible Connection Parameters:
-   0           Dynamically create a new socket within the thread.   (Default)
-   >0          Create the given amount of producer threads.
+   0            Dynamically create a new socket within the thread.   (Default)
+   >0           Create the given amount of producer threads.
 
 Preinstalled Resolvers:
 =======================
@@ -39,26 +39,59 @@ There are some preinstalled resolvers in the software.
 
 Default
 -------
-  The default resolver adds a parameter "--range" that can be specified
+  The "default" resolver adds a parameter "--range" that can be specified
   multiple times. Each parameter registers a range in a special format
   that allows to specify all ranges.
+  --range=<Range>        A single range.
 
 Subnet
 ------
-  The subnetfile resolver adds a resolver that takes a file where all
-  lines represents a subnet.
+  The "subnet" resolver adds a parameter "--range" that can be specified
+  multiple times. Each parameter registers a range in the CIDR-Format.
+  --range=<Range>        A single range.
+
+Subnet-File
+-----------
+  The "subnet:file" resovler allows to specify a file with several subnets.
+  Each subnet is separated by a file.
+  --range-file=<File>    The file containing the subnets in CIDR-Notation.
 
 
 Preinstalled Pingers:
 =====================
-There are no predefined pingers.
+A pinger is an extension to MinePing that performs the retrival of data of
+a server of the range.
+
+Because this can be used in multiple ways, no pinger is defined by this
+software.
 
 Preinstalled Writers:
 =====================
-There are some writers preinstalled.
+A writer formats the result of a pinger. For example a file could be written
+as a XML-File as well as a CSV-File and a writer can handle some of these
+Formats.
 
 CSV
 ---
   This writer stores the values into a csv-file.
-  --separator -s                  The separator char.
-  --no-header -a                  Don't print a header.
+  --separator=<Separator>         The separator char.
+  --no-header                     Don't print a header.
+
+Preinstalled Strategies:
+========================
+A strategy handles the way how the software is executing its pings.
+
+static
+------
+  This strategy creates a fixed amount of threads that are executing a ping.
+  --threads=<Threads>             The amount of threads to be created.
+
+pool
+----
+  This strategy uses a thread pool.
+
+  --max-threads=<Threads>         Maximal amount of threads                *1
+  --max-requests=<Requests>       Maximal amount of requests stored in queue.
+
+  *1 If the amount of threads is zero, the maximal count of threads is
+     unlimited.

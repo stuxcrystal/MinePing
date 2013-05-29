@@ -10,6 +10,7 @@ import java.util.logging.Logger;
 import net.stuxcrystal.minehack.mineping.api.AddressIterator;
 import net.stuxcrystal.minehack.mineping.api.Pinger;
 import net.stuxcrystal.minehack.mineping.api.Resolver;
+import net.stuxcrystal.minehack.mineping.api.Strategy;
 import net.stuxcrystal.minehack.mineping.api.Writer;
 import net.stuxcrystal.minehack.mineping.core.ConnectionCreator;
 import net.stuxcrystal.minehack.mineping.core.PingThread;
@@ -39,9 +40,16 @@ public class MinePing {
 	public Resolver resolver;
 
 	/**
+	 * The strategy how the connections are distributed.
+	 */
+	public Strategy strategy;
+
+
+	/**
 	 * The Output-Stream of the data.
 	 */
 	public OutputStream output;
+
 
 	/**
 	 * The Logger to log into.<p />
@@ -55,25 +63,18 @@ public class MinePing {
 	 */
 	public Logger logger;
 
+
+
 	/**
 	 * The Port-Ranges.
 	 */
 	public int[] ports;
 
 	/**
-	 * The count of threads that are pinging a ip.
-	 */
-	public int threads;
-
-	/**
 	 * All ranges to be pinged.
 	 */
 	private AddressIterator iterator;
 
-	/**
-	 * All ping threads.
-	 */
-	private Thread[] pingThreads;
 
 	/**
 	 * The thread that is started when the file has to be flushed.
@@ -84,6 +85,7 @@ public class MinePing {
 	 * The thread that creates a connection.
 	 */
 	public ConnectionCreator connector;
+
 
 	/**
 	 * The timeout of the sockets.
@@ -96,11 +98,6 @@ public class MinePing {
 	private int connections;
 
 	/**
-	 * The count of results before the data is flushed.
-	 */
-	private int flushAfter;
-
-	/**
 	 * Initializes Mine-Ping.
 	 * @param pinger
 	 * @param writer
@@ -111,22 +108,21 @@ public class MinePing {
 	 */
 	MinePing
 	(
-	  Pinger pinger, Writer writer, Resolver resolver, OutputStream output, Logger logger, String ports,
-	  int threads, int timeout, int connections, int flushAfter
+	  Pinger pinger, Writer writer, Resolver resolver, Strategy strategy,
+	  OutputStream output, Logger logger, String ports,
+	  int timeout, int connections, int flushAfter
 	) {
 		this.pinger      = pinger;
 		this.writer      = writer;
 		this.resolver    = resolver;
+		this.strategy    = strategy;
 		this.output      = output;
 		this.logger      = logger;
 		this.ports       = RangeResolver.parsePortRange(ports);
-		this.threads     = threads;
-		this.pingThreads = new Thread[this.threads];
 		this.writeThread = new WriteThread(writer, logger, flushAfter);
 		this.timeout     = timeout;
 		this.connector   = new ConnectionCreator(this);
 		this.connections = connections;
-		this.flushAfter  = flushAfter;
 	}
 
 	/**
@@ -156,39 +152,32 @@ public class MinePing {
 	 * Starts pinging.
 	 */
 	public void startPing() {
+		this.logger.info("MinePing 3 Resurrection");
+		this.logger.info("Build: 12");
+
+		// Information output
+		this.logger.finest("Current writer:   " + writer.getName());
+		this.logger.finest("Current pinger:   " + pinger.getName());
+		this.logger.finest("Current resolver: " + resolver.getName());
+		this.logger.finest("Current strategy: " + strategy.getName());
+
+		// Preparation state.
 		try {
 			this.writer.onStart(this.output, this.pinger.getColumns());
 		} catch (IOException e) {
 			this.logger.severe("Initiation of the writer failed!");
 			return;
 		}
-
 		this.pinger.prepare();
 		iterator = this.resolver.getRangeIterator(ports);
 
-		this.logger.info("MinePing 3 Resurrection");
-		this.logger.info("Build: 10");
-
+		// Execution state.
 		this.writeThread.start();
-
 		this.connector.createThreads(this.connections);
+		this.strategy.execute();
 
-		for (int i = 0; i<threads; i++) {
-			this.pingThreads[i] = new PingThread(this);
-			this.pingThreads[i].start();
-		}
-
-		for (int i = 0; i<threads; i++) {
-			if (this.pingThreads[i].isAlive())
-				try {
-					this.pingThreads[i].join();
-				} catch (InterruptedException e) {
-					break;
-				}
-		}
-
+		// Clingout state.
 		this.writeThread.interrupt();
-
 		try {
 			this.writeThread.join();
 		} catch (InterruptedException e) {

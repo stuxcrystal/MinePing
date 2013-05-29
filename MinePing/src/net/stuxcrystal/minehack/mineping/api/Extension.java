@@ -23,4 +23,9 @@ public interface Extension {
 	 * Returns all resolvers.
 	 */
 	public List<Resolver> getResolvers();
+
+	/**
+	 * Returns a list of implemented strategy.
+	 */
+	public List<Strategy> getStrategies();
 }

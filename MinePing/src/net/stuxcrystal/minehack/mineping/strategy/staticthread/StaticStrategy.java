@@ -16,6 +16,7 @@ public class StaticStrategy implements Strategy {
 	}
 
 	public void execute() {
+
 		PingThread[] pingThreads = new PingThread[threads];
 
 		for (int i = 0; i<threads; i++) {

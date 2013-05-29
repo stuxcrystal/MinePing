@@ -6,6 +6,8 @@ import java.text.SimpleDateFormat;
 import java.util.logging.Formatter;
 import java.util.logging.LogRecord;
 
+import org.apache.commons.lang3.StringUtils;
+
 /**
  * For
  * @author StuxCrystal
@@ -27,10 +29,8 @@ public class LogFormatter extends Formatter {
         Throwable ex = record.getThrown();
 
         builder.append(date.format(record.getMillis()));
-        builder.append(" [").append(record.getLoggerName()).append("]");
-        builder.append(" [");
-        builder.append(record.getLevel().getLocalizedName().toUpperCase());
-        builder.append("] ");
+        builder.append(" [").append(record.getLoggerName()).append("] ");
+        builder.append(formatLogEnd(record.getLevel().getName(), 6));
         builder.append(formatMessage(record));
         builder.append('\n');
 
@@ -41,6 +41,10 @@ public class LogFormatter extends Formatter {
         }
 
         return builder.toString();
+    }
+
+    public String formatLogEnd(String str, int length) {
+    	return StringUtils.rightPad("[" + str + "]", length + 3);
     }
 
 }

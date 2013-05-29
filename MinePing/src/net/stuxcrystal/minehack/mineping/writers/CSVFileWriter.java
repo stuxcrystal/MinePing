@@ -24,7 +24,7 @@ public class CSVFileWriter implements Writer {
 	public boolean addHeaders = true;
 
 	public String getName() {
-		return "CSV";
+		return "csv";
 	}
 
 	/**

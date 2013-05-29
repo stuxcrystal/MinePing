@@ -6,13 +6,10 @@ import java.util.List;
 import net.stuxcrystal.minehack.mineping.api.Extension;
 import net.stuxcrystal.minehack.mineping.api.Pinger;
 import net.stuxcrystal.minehack.mineping.api.Resolver;
-import net.stuxcrystal.minehack.mineping.api.Strategy;
 import net.stuxcrystal.minehack.mineping.api.Writer;
 import net.stuxcrystal.minehack.mineping.resolvers.defaultresolver.DefaultResolver;
 import net.stuxcrystal.minehack.mineping.resolvers.subnet.SubnetFile;
 import net.stuxcrystal.minehack.mineping.resolvers.subnet.SubnetRanges;
-import net.stuxcrystal.minehack.mineping.strategy.pooled.PoolStrategy;
-import net.stuxcrystal.minehack.mineping.strategy.staticthread.StaticStrategy;
 import net.stuxcrystal.minehack.mineping.writers.CSVFileWriter;
 
 /**
@@ -34,13 +31,6 @@ public class CoreExtension implements Extension {
 		return Arrays.asList(
 			(Resolver) new DefaultResolver(),
 			(Resolver) new SubnetRanges(), (Resolver) new SubnetFile()
-		);
-	}
-
-	public List<Strategy> getStrategies() {
-		return Arrays.asList(
-			(Strategy) new StaticStrategy(),
-			(Strategy) new PoolStrategy()
 		);
 	}
 

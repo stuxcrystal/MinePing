@@ -41,7 +41,7 @@ public class CSVFileWriter implements Writer {
 		columns = header;
 
 		writer = new CsvWriter((java.io.Writer) new OutputStreamWriter(stream), sep);
-		if (addHeaders) writeRecord(header);
+		if (!addHeaders) writeRecord(header);
 	}
 
 	public void add(Map<String, String> values) throws IOException {
@@ -65,8 +65,8 @@ public class CSVFileWriter implements Writer {
 	}
 
 	public void registerCommandLineArguments(OptionParser parser) {
-		parser.addOption(new OptionBuilder("separator").hasArgument(true).setDefault(",").create());
-		parser.addOption(new OptionBuilder("no-header").create());
+		parser.addOption(new OptionBuilder("separator").setShortName("s").hasArgument(true).setDefault(",").create());
+		parser.addOption(new OptionBuilder("no-header").setShortName("a").create());
 	}
 
 	public void parseCommandLine(ParserResult result) {

@@ -17,11 +17,6 @@ import net.stuxcrystal.minehack.mineping.MinePing;
  */
 public class ConnectionCreator implements Runnable {
 
-	/**
-	 * Storage for the data of a request.
-	 * @author StuxCrystal
-	 *
-	 */
 	private class ConnectionRequest {
 
 		private InetSocketAddress address;
@@ -87,6 +82,8 @@ public class ConnectionCreator implements Runnable {
 				request.notify();
 			}
 		}
+
+
 	}
 
 	/**
@@ -178,7 +175,7 @@ public class ConnectionCreator implements Runnable {
 	}
 
 	/**
-	 * Creates the given amount of threads.
+	 * Creats the given amount of threads.
 	 * @param count
 	 */
 	public void createThreads(int count) {

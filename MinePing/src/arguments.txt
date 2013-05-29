@@ -5,32 +5,28 @@ Executes a rangeping.
 
 Default-Parameters:
 ===================
--h            --help                   Shows this help.
+-h               --help                   Shows this help.
 
--p=<Pinger>   --pinger=<Pinger>        Select a pinger.
--w=<Writer>   --writer=<Writer>        Select a writer. Default: CSV
--r=<Resolver> --resolver=<Resolver>    Select a resolver.
--s=<Strategy> --strategy=<Strategy>    Select a strategy. Default: static
+-p=<Pinger>      --pinger=<Pinger>        Select a pinger.
+-r=<Resolver>    --resolver=<Resolver>    Select a resolver.   Default: subnet
+-w=<Writer>      --writer=<Writer>        Select a writer.     Default: CSV
+-s=<Strategy>    --strategy=<Strategy>    Select a strategy.   Default: static
+-c=<Connectior>  --connector=<Connector>  Select a connector.  Default: static
 
--o=<Output>   --output=<Output>        Specifies the outputfile.            *1
--l=<Log>      --log=<Log>              Specifies the logfile.               *1
+-o=<Output>      --output=<Output>        Specifies the outputfile.         *1
+-l=<Log>         --log=<Log>              Specifies the logfile.            *1
 
--t=<Port>     --port=<Port>            Specified the port.
--c=<Count>    --connections=<Count>    Amount of sockets to be established. *2
+-t=<Port>        --port=<Port>            Specified the port.
 
-              --extensions=<Dir>       The Extension-Directory.
-              --flush-results=<Count>  The count of results cached.
-              --log-level=<Level>      Should the output be verbose
-              --timeout=<Timeout>      Timeout in seconds.
+                 --extensions=<Dir>       The Extension-Directory.
+                 --flush-results=<Count>  The count of results cached.
+                 --log-level=<Level>      Should the output be verbose
+
 
 *1 Special Parameters:
    *stdout      Writes the output into the standard output.
    *stderr      Writes the output into the standard error stream.
    *blackhole   Discards anything written into it.
-
-*2 Possible Connection Parameters:
-   0            Dynamically create a new socket within the thread.   (Default)
-   >0           Create the given amount of producer threads.
 
 Preinstalled Resolvers:
 =======================
@@ -95,3 +91,18 @@ pool
 
   *1 If the amount of threads is zero, the maximal count of threads is
      unlimited.
+
+Preinstalled Connectors
+=======================
+A connector handles in which way the software is connecting to the internet.
+
+static
+------
+   This connector can create the given amount of sockets at the same time.
+
+   -c=<Count>    --connections=<Count>    Count of parralel connects.      *1
+                 --timeout=<Timeout>      Timeout in milliseconds.
+
+   *2 Possible Connection Parameters:
+     0           Dynamically create a new socket within the thread.  (Default)
+    >0           Create the given amount of producer threads.

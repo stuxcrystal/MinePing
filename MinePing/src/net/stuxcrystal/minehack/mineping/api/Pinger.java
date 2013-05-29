@@ -22,10 +22,15 @@ public interface Pinger {
 	 */
 	public List<String> getColumns();
 
-	/**systemSetting.php
+	/**
 	 * Prepare for start.
 	 */
 	public void prepare();
+
+	/**
+	 * Prepares the connector to be stopped.
+	 */
+	public void end();
 
 	/**
 	 * Connects to the server.

@@ -28,4 +28,9 @@ public interface Extension {
 	 * Returns a list of implemented strategy.
 	 */
 	public List<Strategy> getStrategies();
+
+	/**
+	 * Returns a list of connectors implemented by this extension.
+	 */
+	public List<Connector> getConnectors();
 }

@@ -8,12 +8,11 @@ import java.util.NoSuchElementException;
 import java.util.logging.Logger;
 
 import net.stuxcrystal.minehack.mineping.api.AddressIterator;
+import net.stuxcrystal.minehack.mineping.api.Connector;
 import net.stuxcrystal.minehack.mineping.api.Pinger;
 import net.stuxcrystal.minehack.mineping.api.Resolver;
 import net.stuxcrystal.minehack.mineping.api.Strategy;
 import net.stuxcrystal.minehack.mineping.api.Writer;
-import net.stuxcrystal.minehack.mineping.core.ConnectionCreator;
-import net.stuxcrystal.minehack.mineping.core.PingThread;
 import net.stuxcrystal.minehack.mineping.core.WriteThread;
 import net.stuxcrystal.minehack.mineping.resolvers.defaultresolver.RangeResolver;
 
@@ -23,6 +22,10 @@ import net.stuxcrystal.minehack.mineping.resolvers.defaultresolver.RangeResolver
  *
  */
 public class MinePing {
+
+	//////////////////////////////////////////////////////////////////////////
+	// API-Methods.                                                         //
+	//////////////////////////////////////////////////////////////////////////
 
 	/**
 	 * The Pinger pinging the ip-ranges.
@@ -44,6 +47,14 @@ public class MinePing {
 	 */
 	public Strategy strategy;
 
+	/**
+	 * The thread that creates a connection.
+	 */
+	public Connector connector;
+
+	//////////////////////////////////////////////////////////////////////////
+	// Output                                                               //
+	//////////////////////////////////////////////////////////////////////////
 
 	/**
 	 * The Output-Stream of the data.
@@ -63,7 +74,9 @@ public class MinePing {
 	 */
 	public Logger logger;
 
-
+	//////////////////////////////////////////////////////////////////////////
+	// Miscallanious stuff.                                                 //
+	//////////////////////////////////////////////////////////////////////////
 
 	/**
 	 * The Port-Ranges.
@@ -82,22 +95,6 @@ public class MinePing {
 	private WriteThread writeThread;
 
 	/**
-	 * The thread that creates a connection.
-	 */
-	public ConnectionCreator connector;
-
-
-	/**
-	 * The timeout of the sockets.
-	 */
-	public int timeout;
-
-	/**
-	 * Connection threads.
-	 */
-	private int connections;
-
-	/**
 	 * Initializes Mine-Ping.
 	 * @param pinger
 	 * @param writer
@@ -108,21 +105,20 @@ public class MinePing {
 	 */
 	MinePing
 	(
-	  Pinger pinger, Writer writer, Resolver resolver, Strategy strategy,
+	  Pinger pinger, Writer writer, Resolver resolver,
+	  Strategy strategy, Connector connector,
 	  OutputStream output, Logger logger, String ports,
-	  int timeout, int connections, int flushAfter
+	  int flushAfter
 	) {
 		this.pinger      = pinger;
 		this.writer      = writer;
 		this.resolver    = resolver;
 		this.strategy    = strategy;
+		this.connector   = connector;
 		this.output      = output;
 		this.logger      = logger;
 		this.ports       = RangeResolver.parsePortRange(ports);
 		this.writeThread = new WriteThread(writer, logger, flushAfter);
-		this.timeout     = timeout;
-		this.connector   = new ConnectionCreator(this);
-		this.connections = connections;
 	}
 
 	/**
@@ -156,10 +152,11 @@ public class MinePing {
 		this.logger.info("Build: 12");
 
 		// Information output
-		this.logger.finest("Current writer:   " + writer.getName());
-		this.logger.finest("Current pinger:   " + pinger.getName());
-		this.logger.finest("Current resolver: " + resolver.getName());
-		this.logger.finest("Current strategy: " + strategy.getName());
+		this.logger.finest("Current writer:    " + writer.getName());
+		this.logger.finest("Current pinger:    " + pinger.getName());
+		this.logger.finest("Current resolver:  " + resolver.getName());
+		this.logger.finest("Current strategy:  " + strategy.getName());
+		this.logger.finest("Current connector: " + connector.getName());
 
 		// Preparation state.
 		try {
@@ -173,10 +170,14 @@ public class MinePing {
 
 		// Execution state.
 		this.writeThread.start();
-		this.connector.createThreads(this.connections);
+		this.connector.start();
 		this.strategy.execute();
 
 		// Clingout state.
+		this.connector.stop();
+		this.pinger.end();
+
+		// Stop writer.
 		this.writeThread.interrupt();
 		try {
 			this.writeThread.join();

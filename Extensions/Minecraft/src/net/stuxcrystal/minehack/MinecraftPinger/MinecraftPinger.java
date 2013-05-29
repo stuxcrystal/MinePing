@@ -125,7 +125,7 @@ public class MinecraftPinger implements Pinger {
 		}
 
 		public boolean fetchData() throws IOException {
-			Socket socket = MinePingInstances.getMinePing().connector.connect(
+			Socket socket = MinePingInstances.getMinePing().connector.connectSocket(
 					new InetSocketAddress(this.getAddress(), this.getPort())
 			);
 
@@ -231,7 +231,7 @@ public class MinecraftPinger implements Pinger {
 
 	public Map<String, String> executePing(InetAddress address, int port) throws IOException {
 
-		MinecraftServer server = new MinecraftServer(address.getHostAddress(), port, MinePingInstances.getMinePing().timeout);
+		MinecraftServer server = new MinecraftServer(address.getHostAddress(), port);
 
 		try {
 			if (!server.fetchData())
@@ -259,5 +259,8 @@ public class MinecraftPinger implements Pinger {
 
 	public void parseCommandLine(ParserResult result) {
 	}
+
+	@Override
+	public void end() {/* Does nothing. */}
 
 }

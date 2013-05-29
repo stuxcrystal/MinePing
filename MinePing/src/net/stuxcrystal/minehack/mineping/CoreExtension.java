@@ -3,11 +3,13 @@ package net.stuxcrystal.minehack.mineping;
 import java.util.Arrays;
 import java.util.List;
 
+import net.stuxcrystal.minehack.mineping.api.Connector;
 import net.stuxcrystal.minehack.mineping.api.Extension;
 import net.stuxcrystal.minehack.mineping.api.Pinger;
 import net.stuxcrystal.minehack.mineping.api.Resolver;
 import net.stuxcrystal.minehack.mineping.api.Strategy;
 import net.stuxcrystal.minehack.mineping.api.Writer;
+import net.stuxcrystal.minehack.mineping.connector.staticthread.DefaultConnector;
 import net.stuxcrystal.minehack.mineping.resolvers.defaultresolver.DefaultResolver;
 import net.stuxcrystal.minehack.mineping.resolvers.subnet.SubnetFile;
 import net.stuxcrystal.minehack.mineping.resolvers.subnet.SubnetRanges;
@@ -41,6 +43,12 @@ public class CoreExtension implements Extension {
 		return Arrays.asList(
 			(Strategy) new PoolStrategy(),
 			(Strategy) new StaticStrategy()
+		);
+	}
+
+	public List<Connector> getConnectors() {
+		return Arrays.asList(
+			(Connector) new DefaultConnector()
 		);
 	}
 

@@ -1,4 +1,4 @@
-package net.stuxcrystal.minehack.mineping.core;
+package net.stuxcrystal.minehack.mineping.connector.staticthread;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -8,14 +8,14 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.logging.Logger;
 
+import net.stuxcrystal.minehack.clparser.OptionBuilder;
+import net.stuxcrystal.minehack.clparser.OptionParser;
+import net.stuxcrystal.minehack.clparser.ParserResult;
+import net.stuxcrystal.minehack.clparser.types.IntegerType;
 import net.stuxcrystal.minehack.mineping.MinePing;
+import net.stuxcrystal.minehack.mineping.api.Connector;
 
-/**
- * Infrastructure to connect to other sockets.
- * @author StuxCrystal
- *
- */
-public class ConnectionCreator implements Runnable {
+public class DefaultConnector implements Connector, Runnable {
 
 	private class ConnectionRequest {
 
@@ -30,10 +30,19 @@ public class ConnectionCreator implements Runnable {
 		}
 	}
 
+	public String getName() {
+		return "static";
+	}
+
 	/**
 	 * All requests to be created.
 	 */
 	private BlockingQueue<ConnectionRequest> sockets = new LinkedBlockingQueue<ConnectionRequest>();
+
+	/**
+	 * All threads that are connecting sockets.
+	 */
+	private Thread[] threads;
 
 	/**
 	 * The timeout
@@ -46,17 +55,12 @@ public class ConnectionCreator implements Runnable {
 	private Logger logger;
 
 	/**
-	 * True if "--connections=0"
+	 * Count of threads that are connecting.
 	 */
-	private boolean noProducers = false;
+	private int cThreads;
 
 	private static int THREAD_ID = 0;
 	private static final Object lock = new Object();
-
-	public ConnectionCreator(MinePing mp) {
-		this.timeout = mp.timeout * 1000;
-		this.logger  = mp.logger;
-	}
 
 	/**
 	 * Waits for requests and handles these.
@@ -79,7 +83,7 @@ public class ConnectionCreator implements Runnable {
 			}
 
 			synchronized(request) {
-				request.notify();
+				request.notifyAll();
 			}
 		}
 
@@ -121,10 +125,10 @@ public class ConnectionCreator implements Runnable {
 	 * @param socket
 	 * @return
 	 */
-	public Socket connect(InetSocketAddress socket) {
+	public Socket connectSocket(InetSocketAddress socket) {
 		ConnectionRequest request = new ConnectionRequest(socket);
 
-		if (noProducers) {
+		if (cThreads == 0) {
 			connectAsSocket(request);
 			return (Socket) request.socket;
 		}
@@ -144,7 +148,7 @@ public class ConnectionCreator implements Runnable {
 		ConnectionRequest request = new ConnectionRequest(socket);
 		request.isChannel = true;
 
-		if (noProducers) {
+		if (cThreads == 0) {
 			connectAsChannel(request);
 			return (SocketChannel) request.socket;
 		}
@@ -175,18 +179,20 @@ public class ConnectionCreator implements Runnable {
 	}
 
 	/**
-	 * Creats the given amount of threads.
+	 * Creates the given amount of threads.
 	 * @param count
 	 */
-	public void createThreads(int count) {
-		if (count <= 0) {
-			// Connect inside the threads.
-			this.noProducers = true;
-		} else {
-			// Create the producer-threads.
-			for (int i = 0; i<count; i++)
-				startNewThread();
-		}
+	public void start() {
+		this.logger = MinePing.staticlogger;
+
+		threads = new Thread[cThreads];
+		for (int i = 0; i<cThreads; i++)
+			threads[i] = startNewThread();
+	}
+
+	public void stop() {
+		for (Thread thread : threads)
+			thread.interrupt();
 	}
 
 	/**
@@ -196,11 +202,20 @@ public class ConnectionCreator implements Runnable {
 	private Thread startNewThread() {
 		Thread thread = new Thread(this);
 		synchronized (lock) { thread.setName("ConnectThread::"+(THREAD_ID++)); };
-		thread.setDaemon(true);
 		thread.start();
 		return thread;
 	}
 
+
+	public void registerCommandLineArguments(OptionParser parser) {
+		parser.addOption(new OptionBuilder("connections").setType(IntegerType.INSTANCE).setDefault(10).create());
+		parser.addOption(new OptionBuilder("timeout").hasArgument(true).setType(IntegerType.INSTANCE).setDefault(1000).create());
+	}
+
+	public void parseCommandLine(ParserResult result) {
+		cThreads = result.getValue("connections");
+		timeout = result.getValue("timeout");
+	}
 
 
 }

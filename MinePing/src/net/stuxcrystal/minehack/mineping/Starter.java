@@ -19,7 +19,9 @@ import net.stuxcrystal.minehack.clparser.types.ClassType;
 import net.stuxcrystal.minehack.clparser.types.DirectoryType;
 import net.stuxcrystal.minehack.clparser.types.IntegerType;
 import net.stuxcrystal.minehack.clparser.types.OutputStreamType;
+import net.stuxcrystal.minehack.mineping.addons.ExtensionListing;
 import net.stuxcrystal.minehack.mineping.addons.ExtensionManager;
+import net.stuxcrystal.minehack.mineping.api.Connector;
 import net.stuxcrystal.minehack.mineping.api.Extension;
 import net.stuxcrystal.minehack.mineping.api.Pinger;
 import net.stuxcrystal.minehack.mineping.api.Resolver;
@@ -34,26 +36,6 @@ public class Starter
 {
 
 	/**
-	 * All available pingers.
-	 */
-	public List<Pinger> pingers = new LinkedList<Pinger>();
-
-	/**
-	 * All available writers.
-	 */
-	public List<Writer> writers = new LinkedList<Writer>();
-
-	/**
-	 * A list of resolvers.
-	 */
-	public List<Resolver> resolvers = new LinkedList<Resolver>();
-
-	/**
-	 * A list of recognized strategies.
-	 */
-	public List<Strategy> strategies = new LinkedList<Strategy>();
-
-	/**
 	 * The arguments given in the main method.
 	 */
 	public String[] arguments;
@@ -63,29 +45,22 @@ public class Starter
 	 */
 	public File extensionFolder;
 
+	/**
+	 * Lists extensions.
+	 */
+	public ExtensionListing listing = new ExtensionListing();
+
 	Starter(File folder, String[] args) {
 		this.arguments = args;
 		this.extensionFolder = folder;
 	}
 
 	private void loadExtensions(Extension[] extensions) {
-		loadExtension(new CoreExtension());
+		listing.loadExtension(new CoreExtension());
 
 		for (Extension extension : extensions) {
-			loadExtension(extension);
+			listing.loadExtension(extension);
 		}
-	}
-
-	private void loadExtension(Extension extension) {
-		List<Pinger> p = extension.getPingers();
-		List<Writer> w = extension.getWriters();
-		List<Resolver> r = extension.getResolvers();
-		List<Strategy> s = extension.getStrategies();
-
-		if (p!=null) pingers.addAll(p);
-		if (w!=null) writers.addAll(w);
-		if (r!=null) resolvers.addAll(r);
-		if (s!=null) strategies.addAll(s);
 	}
 
 	public MinePing parseArguments() throws RuntimeException {
@@ -94,16 +69,15 @@ public class Starter
 		OptionParser parser = new OptionParser();
 
 		// Register options to parsed here.
-		parser.addOption(new OptionBuilder("pinger").setShortName("p").hasArgument(true).setDefault("MC-Ping").create());
+		parser.addOption(new OptionBuilder("pinger").setShortName("p").hasArgument(true).required(true).create());
 		parser.addOption(new OptionBuilder("writer").setShortName("w").hasArgument(true).setDefault("CSV").create());
-		parser.addOption(new OptionBuilder("resolver").setShortName("r").hasArgument(true).setDefault("Default").create());
+		parser.addOption(new OptionBuilder("resolver").setShortName("r").hasArgument(true).setDefault("subnet").create());
 		parser.addOption(new OptionBuilder("strategy").setShortName("s").hasArgument(true).setDefault("static").create());
+		parser.addOption(new OptionBuilder("connector").setShortName("c").hasArgument(true).setDefault("static").create());
 		parser.addOption(new OptionBuilder("output").setShortName("o").hasArgument(true).setType(OutputStreamType.ALL).setDefault(System.out).create());
 		parser.addOption(new OptionBuilder("log").setShortName("l").hasArgument(true).setType(OutputStreamType.ALL).setDefault(System.err).create());
 		parser.addOption(new OptionBuilder("port").setShortName("t").hasArgument(true).required(true).create());
 		parser.addOption(new OptionBuilder("log-level").hasArgument(true).setDefault("INFO").create());
-		parser.addOption(new OptionBuilder("timeout").hasArgument(true).setType(IntegerType.INSTANCE).setDefault(1).create());
-		parser.addOption(new OptionBuilder("connections").setShortName("c").setType(IntegerType.INSTANCE).setDefault(10).create());
 		parser.addOption(new OptionBuilder("flush-results").hasArgument(true).setType(IntegerType.INSTANCE).setDefault(50).create());
 		parser.addOption(new OptionBuilder("extension").hasArgument(true).setMulti(true).setType(ClassType.INSTANCE).create());
 
@@ -123,10 +97,11 @@ public class Starter
     	loadExtensions(mgr.getExtensions());
 
     	// Parse the Pinger.
-		Pinger pinger = getPinger((String) baseOptions.getValue("pinger"));
-		Writer writer = getWriter((String) baseOptions.getValue("writer"));
-		Resolver resolver = getResolver((String) baseOptions.getValue("resolver"));
-		Strategy strategy = getStrategy((String) baseOptions.getValue("strategy"));
+		Pinger pinger =       listing.getPinger((String) baseOptions.getValue("pinger"));
+		Writer writer =       listing.getWriter((String) baseOptions.getValue("writer"));
+		Resolver resolver =   listing.getResolver((String) baseOptions.getValue("resolver"));
+		Strategy strategy =   listing.getStrategy((String) baseOptions.getValue("strategy"));
+		Connector connector = listing.getConnector((String) baseOptions.getValue("connector"));
 
 		// Register options already parsed in the first pass.
     	parser.addOption(new OptionBuilder("extension").hasArgument(true).setType(ClassType.INSTANCE).setMulti(true).setShortName("ext").create());
@@ -137,6 +112,7 @@ public class Starter
     	writer.registerCommandLineArguments(parser);
     	resolver.registerCommandLineArguments(parser);
     	strategy.registerCommandLineArguments(parser);
+    	connector.registerCommandLineArguments(parser);
 
     	// Parse Results
     	ParserResult result = parser.parseArguments(arguments, false);
@@ -151,6 +127,7 @@ public class Starter
 	    	writer.parseCommandLine(result);
 	    	resolver.parseCommandLine(result);
 	    	strategy.parseCommandLine(result);
+	    	connector.parseCommandLine(result);
     	} catch (IllegalArgumentException e) {
     		System.err.println(e.getMessage());
     		return null;
@@ -164,11 +141,10 @@ public class Starter
 				writer,
 				resolver,
 				strategy,
+				connector,
 				(OutputStream) baseOptions.getValue("output"),
 				MinePing.staticlogger,
 				(String) baseOptions.getValue("port"),
-				(Integer) baseOptions.getValue("timeout"),
-				(Integer) baseOptions.getValue("connections"),
 				(Integer) baseOptions.getValue("flush-results")
 		);
 
@@ -194,43 +170,6 @@ public class Starter
 
 		return result;
 
-	}
-
-	public Pinger getPinger(String name) throws RuntimeException {
-		for (Pinger pinger : pingers) {
-			if (pinger.getName().equalsIgnoreCase(name))
-				return pinger;
-		}
-
-		throw new RuntimeException("Pinger not found.");
-	}
-
-	public Resolver getResolver(String name) throws RuntimeException {
-		for (Resolver resolver : resolvers) {
-			if (resolver.getName().equalsIgnoreCase(name)) {
-				return resolver;
-			}
-		}
-
-		throw new RuntimeException("Resolver not found.");
-	}
-
-	public Writer getWriter(String name) throws RuntimeException {
-		for (Writer writer : writers) {
-			if (writer.getName().equalsIgnoreCase(name))
-				return writer;
-		}
-
-		throw new RuntimeException("Writer not found.");
-	}
-
-	private Strategy getStrategy(String name) {
-		for (Strategy strategy : strategies) {
-			if (strategy.getName().equalsIgnoreCase(name))
-				return strategy;
-		}
-
-		throw new RuntimeException("Strategy not recognized.");
 	}
 
 
